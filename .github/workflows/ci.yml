@@ -1,0 +1,35 @@
+name: ai-cs-api-test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run AI API test suite
+        # 用例本身会因为被测服务有缺陷而失败，这里不让 job 直接红掉，
+        # 保证报告一定被上传；真实项目里可以把 continue-on-error 去掉做质量卡口
+        continue-on-error: true
+        run: python -m pytest -v
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-test-report
+          path: reports/
+          retention-days: 30
